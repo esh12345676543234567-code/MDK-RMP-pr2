@@ -1,0 +1,158 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Мои Заметки',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+      home: const NoteListScreen(),
+    );
+  }
+}
+
+class NoteListScreen extends StatefulWidget {
+  const NoteListScreen({super.key});
+
+  @override
+  State<NoteListScreen> createState() => _NoteListScreenState();
+}
+
+class _NoteListScreenState extends State<NoteListScreen> {
+  final List<String> _notes = [];
+  final TextEditingController _textController = TextEditingController();
+  int _editingIndex = -1;
+
+  void _saveNote() {
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      if (_editingIndex == -1) {
+        _notes.add(text);
+      } else {
+        _notes[_editingIndex] = text;
+        _editingIndex = -1;
+      }
+      _textController.clear();
+    });
+  }
+
+  void _startEditing(int index) {
+    setState(() {
+      _editingIndex = index;
+      _textController.text = _notes[index];
+    });
+  }
+
+  void _deleteNote(int index) {
+    setState(() {
+      if (_editingIndex == index) {
+        _editingIndex = -1;
+        _textController.clear();
+      }
+      _notes.removeAt(index);
+    });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Заметки'),
+        centerTitle: true,
+        backgroundColor: Colors.blue.shade100,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      hintText: 'Введите текст заметки...',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _editingIndex != -1
+                          ? IconButton(
+                              icon: const Icon(Icons.cancel),
+                              onPressed: () {
+                                setState(() {
+                                  _editingIndex = -1;
+                                  _textController.clear();
+                                });
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _saveNote,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  ),
+                  child: Text(_editingIndex == -1 ? 'Сохранить' : 'Обновить'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: _notes.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Список заметок пуст',
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _notes.length,
+                      itemBuilder: (context, index) {
+                        final isEditingThis = _editingIndex == index;
+                        return Card(
+                          color: isEditingThis ? Colors.blue.shade50 : null,S
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          child: ListTile(
+                            title: Text(_notes[index]),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.orange),
+                                  onPressed: () => _startEditing(index),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _deleteNote(index),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
